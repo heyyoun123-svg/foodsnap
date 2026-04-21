@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FoodSnap</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+    .header {
+      background: #fff;
+      padding: 16px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+    .header .user-info { display: flex; align-items: center; gap: 8px; }
+    .header .user-avatar {
+      width: 32px; height: 32px;
+      background: #6366f1;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #fff; font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* 로그인 화면 */
+    .auth-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 24px;
+      background: #fff;
+    }
+    .auth-screen .logo { font-size: 48px; margin-bottom: 16px; }
+    .auth-screen h2 { font-size: 24px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+    .auth-screen p { font-size: 14px; color: #6b7280; margin-bottom: 32px; text-align: center; }
+    .auth-input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 15px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .auth-input:focus { border-color: #6366f1; }
+    .auth-btn {
+      width: 100%;
+      padding: 14px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .auth-btn:hover { background: #4f46e5; }
+    .google-btn {
+      width: 100%;
+      padding: 14px;
+      background: #fff;
+      color: #1a1a1a;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .google-btn:hover { background: #f9fafb; }
+    .auth-switch { font-size: 14px; color: #6b7280; text-align: center; margin-top: 8px; }
+    .auth-switch span { color: #6366f1; cursor: pointer; font-weight: 600; }
+    .auth-error { color: #ef4444; font-size: 13px; margin-bottom: 12px; text-align: center; }
+
+    /* ── 온보딩 ── */
+    .onboarding-screen {
+      display: none;
+      position: fixed;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      height: 100vh;
+      background: #fff;
+      z-index: 200;
+      flex-direction: column;
+    }
+    .onboarding-screen.active { display: flex; }
+    .ob-slides { flex: 1; overflow: hidden; }
+    .ob-slide {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 32px 24px;
+      height: 100%;
+      text-align: center;
+    }
+    .ob-slide.active { display: flex; }
+    .ob-emoji { font-size: 72px; margin-bottom: 28px; }
+    .ob-title { font-size: 24px; font-weight: 800; color: #1a1a1a; margin-bottom: 14px; line-height: 1.3; }
+    .ob-desc { font-size: 15px; color: #6b7280; line-height: 1.7; max-width: 300px; }
+    .ob-desc strong { color: #6366f1; }
+    .ob-dots { display: flex; justify-content: center; gap: 8px; padding: 20px 0 8px; }
+    .ob-dot { width: 8px; height: 8px; border-radius: 4px; background: #e5e7eb; transition: all 0.3s; }
+    .ob-dot.active { width: 24px; background: #6366f1; }
+    .ob-footer { padding: 16px 24px 40px; display: flex; flex-direction: column; gap: 10px; }
+    .ob-next-btn {
+      width: 100%; padding: 16px;
+      background: #6366f1; color: #fff;
+      border: none; border-radius: 14px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+    }
+    .ob-next-btn:hover { background: #4f46e5; }
+    .ob-skip-btn {
+      width: 100%; padding: 12px;
+      background: none; color: #9ca3af;
+      border: none; font-size: 14px; cursor: pointer;
+    }
+
+    /* ── 인앱 토스트 에러 (alert 대체) ── */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%; transform: translateX(-50%);
+      max-width: 390px; width: calc(100% - 40px);
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 14px; font-weight: 500;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      z-index: 999;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s, bottom 0.3s;
+    }
+    .toast.show { opacity: 1; pointer-events: auto; bottom: 100px; }
+    .toast.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .toast.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .toast.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .toast-icon { font-size: 18px; flex-shrink: 0; }
+    .toast-close {
+      margin-left: auto; background: none; border: none;
+      font-size: 16px; cursor: pointer; opacity: 0.5; flex-shrink: 0;
+    }
+
+    /* 메인 앱 */
+    .app-screen { display: none; }
+    .upload-section {
+      background: #fff;
+      margin: 12px;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .upload-box {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .upload-box:hover { border-color: #6366f1; }
+    .upload-box .icon { font-size: 40px; margin-bottom: 10px; }
+    .upload-box p { color: #6b7280; font-size: 14px; }
+    .upload-box strong { color: #6366f1; }
+    #fileInput { display: none; }
+    #preview {
+      display: none;
+      margin-top: 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+    #preview img { width: 100%; max-height: 240px; object-fit: cover; display: block; }
+    #preview .change-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,0.5); color: #fff;
+      border: none; border-radius: 8px;
+      padding: 4px 10px; font-size: 12px; cursor: pointer;
+    }
+    .analyze-btn {
+      display: none; width: 100%; margin-top: 14px;
+      padding: 14px; background: #6366f1; color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+    }
+    .loading { display: none; text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #e5e7eb; border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-card {
+      display: none; background: #fff;
+      margin: 0 12px 12px; border-radius: 16px;
+      padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .result-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #1a1a1a; }
+    .food-name { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+    .calorie-badge {
+      display: inline-block; background: #eef2ff; color: #6366f1;
+      font-size: 14px; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px; margin-bottom: 14px;
+    }
+    .nutrition-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+    .nutrition-item { background: #f9fafb; border-radius: 10px; padding: 10px; text-align: center; }
+    .nutrition-item .label { font-size: 11px; color: #9ca3af; margin-bottom: 2px; }
+    .nutrition-item .value { font-size: 15px; font-weight: 700; color: #1a1a1a; }
+    .balance-comment {
+      background: #f0fdf4; border-left: 3px solid #22c55e;
+      border-radius: 8px; padding: 12px;
+      font-size: 14px; color: #166534; line-height: 1.5; margin-bottom: 14px;
+    }
+    .share-btn {
+      width: 100%; padding: 13px; background: #fff;
+      color: #6366f1; border: 2px solid #6366f1;
+      border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .share-btn:hover { background: #6366f1; color: #fff; }
+    .feed-section { margin: 0 12px 80px; }
+    .feed-section h2 { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; }
+    .feed-item {
+      background: #fff; border-radius: 16px;
+      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden;
+    }
+    .feed-item img { width: 100%; height: 200px; object-fit: cover; }
+    .feed-item .feed-body { padding: 14px; }
+    .feed-item .feed-user { font-size: 12px; color: #9ca3af; margin-bottom: 4px; }
+    .feed-item .feed-food { font-size: 16px; font-weight: 700; color: #1a1a1a; }
+    .feed-item .feed-cal { font-size: 13px; color: #6366f1; font-weight: 600; margin: 2px 0 6px; }
+    .feed-item .feed-comment { font-size: 13px; color: #6b7280; line-height: 1.5; margin-bottom: 10px; }
+    .feed-actions { display: flex; gap: 12px; }
+    .like-btn {
+      font-size: 13px; color: #6b7280;
+      background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .like-btn.liked { color: #ef4444; }
+    .comment-btn {
+      font-size: 13px; color: #6b7280;
+      background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .bottom-tab {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: #fff; border-top: 1px solid #eee;
+      display: flex; justify-content: space-around;
+      padding: 10px 0 16px; z-index: 10;
+    }
+    .tab-item {
+      display: flex; flex-direction: column;
+      align-items: center; font-size: 10px;
+      color: #9ca3af; gap: 2px; cursor: pointer;
+    }
+    .tab-item.active { color: #6366f1; }
+    .tab-item span:first-child { font-size: 22px; }
+
+    /* 바텀시트 */
+    .bottom-sheet-overlay {
+      display: none; position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); z-index: 100;
+    }
+    .bottom-sheet-overlay.open { display: block; }
+    .bottom-sheet {
+      position: fixed; bottom: -100%;
+      left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 430px;
+      background: #fff; border-radius: 20px 20px 0 0;
+      padding: 16px 20px 40px; z-index: 101;
+      transition: bottom 0.3s ease;
+      max-height: 70vh; overflow-y: auto;
+    }
+    .bottom-sheet.open { bottom: 0; }
+    .bottom-sheet-handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 2px; margin: 0 auto 16px; }
+    .bottom-sheet h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #1a1a1a; }
+    .comment-item { display: flex; gap: 10px; margin-bottom: 14px; }
+    .comment-avatar {
+      width: 32px; height: 32px; background: #6366f1; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: #fff; font-weight: 700; flex-shrink: 0;
+    }
+    .comment-bubble { flex: 1; }
+    .comment-name { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+    .comment-text { font-size: 13px; color: #4b5563; line-height: 1.5; }
+    .comment-input-row {
+      display: flex; gap: 8px; margin-top: 16px;
+      border-top: 1px solid #f3f4f6; padding-top: 16px;
+    }
+    .comment-input-row input {
+      flex: 1; padding: 10px 14px;
+      border: 1px solid #e5e7eb; border-radius: 20px; font-size: 14px; outline: none;
+    }
+    .comment-input-row input:focus { border-color: #6366f1; }
+    .comment-send-btn {
+      background: #6366f1; color: #fff; border: none;
+      border-radius: 20px; padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
+    /* 프로필 */
+    .profile-screen { display: none; padding: 20px 12px 80px; }
+    .profile-card {
+      background: #fff; border-radius: 16px; padding: 24px;
+      text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 12px;
+    }
+    .profile-avatar {
+      width: 64px; height: 64px; background: #6366f1; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: #fff; font-weight: 700; margin: 0 auto 12px;
+    }
+    .profile-name { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+    .profile-email { font-size: 13px; color: #9ca3af; margin-bottom: 16px; }
+    .logout-btn {
+      padding: 10px 24px; background: #fff; color: #ef4444;
+      border: 1px solid #ef4444; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
+    /* 기록 */
+    .record-screen { display: none; padding: 40px 12px 80px; text-align: center; }
+    .coming-soon { background: #fff; border-radius: 16px; padding: 40px 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .coming-soon .icon { font-size: 48px; margin-bottom: 16px; }
+    .coming-soon h3 { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+    .coming-soon p { font-size: 14px; color: #6b7280; }
+
+    /* 피드 탭 */
+    .feed-only-screen { display: none; padding: 12px 12px 80px; }
+
+    .dashboard-header {
+      padding: 16px 20px 8px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .greeting { font-size: 17px; font-weight: 700; color: #1a1a1a; }
+    .today-date { font-size: 13px; color: #9ca3af; }
+    .summary-card { background: #6366f1; margin: 0 12px 12px; border-radius: 16px; padding: 20px; color: #fff; }
+    .summary-title { font-size: 13px; font-weight: 600; opacity: 0.8; margin-bottom: 14px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .summary-item { text-align: center; }
+    .summary-value { font-size: 18px; font-weight: 700; }
+    .summary-label { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+    .fab {
+      position: fixed; bottom: 80px;
+      right: calc(50% - 215px + 16px);
+      width: 56px; height: 56px;
+      background: #6366f1; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.4); z-index: 9;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div class="auth-screen" id="authScreen">
+  <div class="logo">🥗</div>
+  <h2>FoodSnap</h2>
+  <p>식사를 기록하고 친구들과 공유해보세요</p>
+  <div id="authError" class="auth-error"></div>
+  <div id="loginForm">
+    <input type="email" class="auth-input" id="loginEmail" placeholder="이메일" />
+    <input type="password" class="auth-input" id="loginPassword" placeholder="비밀번호" />
+    <button class="auth-btn" onclick="loginWithEmail()">로그인</button>
+    <button class="google-btn" onclick="loginWithGoogle()">
+      <img src="https://www.google.com/favicon.ico" width="18" /> Google로 계속하기
+    </button>
+    <div class="auth-switch">계정이 없으신가요? <span onclick="showSignup()">회원가입</span></div>
+  </div>
+  <div id="signupForm" style="display:none; width:100%;">
+    <input type="text" class="auth-input" id="signupName" placeholder="닉네임" />
+    <input type="email" class="auth-input" id="signupEmail" placeholder="이메일" />
+    <input type="password" class="auth-input" id="signupPassword" placeholder="비밀번호 (6자 이상)" />
+    <button class="auth-btn" onclick="signupWithEmail()">회원가입</button>
+    <button class="google-btn" onclick="loginWithGoogle()">
+      <img src="https://www.google.com/favicon.ico" width="18" /> Google로 계속하기
+    </button>
+    <div class="auth-switch">이미 계정이 있으신가요? <span onclick="showLogin()">로그인</span></div>
+  </div>
+</div>
+
+<!-- ── 온보딩 (신규 유저 최초 1회) ── -->
+<div class="onboarding-screen" id="onboardingScreen">
+  <div class="ob-slides">
+    <div class="ob-slide active" id="ob-slide-0">
+      <div class="ob-emoji">🥗</div>
+      <div class="ob-title">FoodSnap에<br>오신 걸 환영해요!</div>
+      <div class="ob-desc">식사 사진 한 장으로<br><strong>칼로리와 영양소</strong>를 바로 확인하고<br>건강한 식습관을 만들어보세요.</div>
+    </div>
+    <div class="ob-slide" id="ob-slide-1">
+      <div class="ob-emoji">📸</div>
+      <div class="ob-title">사진을 찍으면<br>AI가 분석해요</div>
+      <div class="ob-desc">음식 사진을 업로드하면<br><strong>GPT-4o AI</strong>가 음식을 인식하고<br>탄수화물·단백질·지방까지<br>자동으로 계산해드려요.</div>
+    </div>
+    <div class="ob-slide" id="ob-slide-2">
+      <div class="ob-emoji">🌍</div>
+      <div class="ob-title">친구들과<br>함께 기록해요</div>
+      <div class="ob-desc">내 식사를 피드에 공유하고<br><strong>좋아요와 댓글</strong>로 소통하며<br>서로의 건강한 식단을<br>응원해보세요.</div>
+    </div>
+  </div>
+  <div class="ob-dots">
+    <div class="ob-dot active" id="ob-dot-0"></div>
+    <div class="ob-dot" id="ob-dot-1"></div>
+    <div class="ob-dot" id="ob-dot-2"></div>
+  </div>
+  <div class="ob-footer">
+    <button class="ob-next-btn" id="obNextBtn" onclick="obNext()">다음</button>
+    <button class="ob-skip-btn" onclick="obFinish()">건너뛰기</button>
+  </div>
+</div>
+
+<!-- ── OpenAI API 키 입력 모달 ── -->
+<div id="keyModal" style="display:none; position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; height:100vh; background:rgba(0,0,0,0.6); z-index:300; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:20px; padding:28px 24px; margin:0 20px; width:calc(100% - 40px);">
+    <div style="font-size:28px; text-align:center; margin-bottom:12px;">🔑</div>
+    <div style="font-size:18px; font-weight:700; color:#1a1a1a; margin-bottom:8px; text-align:center;">OpenAI API 키 입력</div>
+    <div style="font-size:13px; color:#6b7280; margin-bottom:20px; text-align:center; line-height:1.6;">AI 분석 기능을 사용하려면<br>OpenAI API 키가 필요해요.<br>키는 이 기기에만 저장돼요.</div>
+    <input type="password" id="keyInput" placeholder="sk-..." style="width:100%; padding:14px 16px; border:1px solid #e5e7eb; border-radius:12px; font-size:14px; outline:none; margin-bottom:8px;" />
+    <div id="keyError" style="color:#ef4444; font-size:12px; margin-bottom:12px; min-height:16px;"></div>
+    <button onclick="saveApiKey()" style="width:100%; padding:14px; background:#6366f1; color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:12px;">저장하고 시작하기</button>
+    <div style="font-size:12px; color:#9ca3af; text-align:center;">API 키는 <a href="https://platform.openai.com/api-keys" target="_blank" style="color:#6366f1;">platform.openai.com</a> 에서 발급받을 수 있어요</div>
+  </div>
+</div>
+
+<!-- ── 토스트 (alert 대체) ── -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon"></span>
+  <span id="toastMsg"></span>
+  <button class="toast-close" onclick="hideToast()">✕</button>
+</div>
+
+<!-- 메인 앱 -->
+<div class="app-screen" id="appScreen">
+  <div class="header">
+    <h1>🥗 FoodSnap</h1>
+    <div class="user-info">
+      <div class="user-avatar" id="userAvatar" onclick="showTab('profile')"></div>
+    </div>
+  </div>
+
+  <div id="homeTab">
+    <div class="dashboard-header">
+      <div class="greeting" id="greetingText">안녕하세요! 👋</div>
+      <div class="today-date" id="todayDate"></div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-title">오늘의 영양 요약</div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-value" id="totalCalories">0</div>
+          <div class="summary-label">칼로리 (kcal)</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="totalCarbs">0g</div>
+          <div class="summary-label">탄수화물</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="totalProtein">0g</div>
+          <div class="summary-label">단백질</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-value" id="totalFat">0g</div>
+          <div class="summary-label">지방</div>
+        </div>
+      </div>
+    </div>
+    <div class="upload-section">
+      <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">📸</div>
+        <p><strong>사진을 업로드</strong>하거나 탭하세요</p>
+        <p style="margin-top:4px; font-size:12px;">식사 사진을 찍으면 AI가 분석해드려요</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)" />
+      <div id="preview" style="display:none;">
+        <img id="previewImg" src="" alt="미리보기" />
+        <button class="change-btn" onclick="document.getElementById('fileInput').click()">변경</button>
+      </div>
+      <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" style="display:none;">🤖 AI 분석하기</button>
+      <div class="loading" id="loading" style="display:none; text-align:center; padding:20px;">
+        <div class="spinner"></div>
+        <p>AI가 식사를 분석하고 있어요...</p>
+      </div>
+    </div>
+    <div class="result-card" id="resultCard" style="display:none;">
+      <h2>📊 분석 결과</h2>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+        <div class="food-name" id="foodName" contenteditable="false" style="flex:1; outline:none;"></div>
+        <button onclick="toggleEdit()" id="editBtn" style="font-size:12px; color:#6366f1; background:none; border:1px solid #6366f1; border-radius:8px; padding:4px 10px; cursor:pointer;">✏️ 수정</button>
+      </div>
+      <div class="calorie-badge" id="calorieBadge"></div>
+      <div class="nutrition-grid">
+        <div class="nutrition-item"><div class="label">탄수화물</div><div class="value" id="carbs"></div></div>
+        <div class="nutrition-item"><div class="label">단백질</div><div class="value" id="protein"></div></div>
+        <div class="nutrition-item"><div class="label">지방</div><div class="value" id="fat"></div></div>
+      </div>
+      <div class="balance-comment" id="balanceComment"></div>
+      <div id="warningComment" style="display:none; background:#fff7ed; border-left:3px solid #f97316; border-radius:8px; padding:12px; font-size:14px; color:#9a3412; line-height:1.5; margin-bottom:14px;"></div>
+      <button class="share-btn" onclick="shareToFeed()">📤 피드에 공유하기</button>
+    </div>
+    <div class="feed-section">
+      <h2>🌍 오늘의 피드</h2>
+      <div id="feedList"></div>
+    </div>
+    <div id="myTodayFeed" style="display:none;"></div>
+  </div>
+
+  <div class="record-screen" id="recordTab">
+    <div class="coming-soon">
+      <div class="icon">📅</div>
+      <h3>기록 기능 준비 중</h3>
+      <p>캘린더 기반 식단 기록과 AI 추천 기능이 곧 업데이트될 예정이에요!</p>
+    </div>
+  </div>
+
+  <div class="feed-only-screen" id="feedTab">
+    <div class="feed-section" style="margin: 0 0 80px;">
+      <h2>🌍 전체 피드</h2>
+      <div id="feedListAll"></div>
+    </div>
+  </div>
+
+  <div class="profile-screen" id="profileTab">
+    <div class="profile-card">
+      <div class="profile-avatar" id="profileAvatar"></div>
+      <div class="profile-name" id="profileName"></div>
+      <div class="profile-email" id="profileEmail"></div>
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+      <button onclick="showKeyModal()" style="margin-top:10px; padding:10px 24px; background:#fff; color:#6366f1; border:1px solid #6366f1; border-radius:20px; font-size:14px; font-weight:600; cursor:pointer;">🔑 API 키 변경</button>
+    </div>
+  </div>
+
+  <div class="bottom-tab">
+    <div class="tab-item active" onclick="showTab('home')"><span>🏠</span><span>홈</span></div>
+    <div class="tab-item" onclick="showTab('record')"><span>📅</span><span>기록</span></div>
+    <div class="tab-item" onclick="showTab('feed')"><span>👥</span><span>피드</span></div>
+    <div class="tab-item" onclick="showTab('profile')"><span>👤</span><span>프로필</span></div>
+  </div>
+</div>
+
+<!-- 댓글 바텀시트 -->
+<div class="bottom-sheet-overlay" id="overlay" onclick="closeComments()"></div>
+<div class="bottom-sheet" id="commentSheet">
+  <div class="bottom-sheet-handle"></div>
+  <h3>💬 댓글</h3>
+  <div id="commentList"></div>
+  <div class="comment-input-row">
+    <input type="text" id="commentInput" placeholder="댓글을 입력하세요" />
+    <button class="comment-send-btn" onclick="submitComment()">전송</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, arrayUnion, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAtzkDDxFdHccDoVtP2uEK44Zimufaspc0",
+    authDomain: "foodsnap-b7a66.firebaseapp.com",
+    projectId: "foodsnap-b7a66",
+    storageBucket: "foodsnap-b7a66.firebasestorage.app",
+    messagingSenderId: "47992997185",
+    appId: "1:47992997185:web:e1e0416bc5e670df464dc0",
+    measurementId: "G-MSBFNLWYJV"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  const API_URL = "https://api.openai.com/v1/chat/completions";
+  const OB_KEY = "foodsnap_ob_done";
+  const KEY_STORAGE = "foodsnap_openai_key";
+
+  function getOpenAIKey() {
+    return localStorage.getItem(KEY_STORAGE) || '';
+  }
+
+  function showKeyModal() {
+    document.getElementById('keyModal').style.display = 'flex';
+  }
+  window.saveApiKey = () => {
+    const key = document.getElementById('keyInput').value.trim();
+    if (!key.startsWith('sk-')) {
+      document.getElementById('keyError').textContent = 'OpenAI API 키는 sk- 로 시작해야 해요.';
+      return;
+    }
+    localStorage.setItem(KEY_STORAGE, key);
+    document.getElementById('keyModal').style.display = 'none';
+    document.getElementById('keyError').textContent = '';
+  };
+  window.removeApiKey = () => {
+    localStorage.removeItem(KEY_STORAGE);
+    document.getElementById('keyInput').value = '';
+    showKeyModal();
+  };
+
+  let currentUser = null;
+  let currentPostId = null;
+  let currentImageBase64 = null;
+  let currentResult = null;
+  let toastTimer = null;
+
+  // ── 토스트 (alert 전면 대체) ──
+  function showToast(msg, type = 'error', duration = 3500) {
+    const toast = document.getElementById('toast');
+    const icons = { error: '⚠️', success: '✅', info: 'ℹ️' };
+    document.getElementById('toastIcon').textContent = icons[type] || '⚠️';
+    document.getElementById('toastMsg').textContent = msg;
+    toast.className = `toast ${type} show`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, duration);
+  }
+  window.hideToast = () => {
+    document.getElementById('toast').classList.remove('show');
+  };
+
+  // ── 온보딩 ──
+  let obSlide = 0;
+  const OB_TOTAL = 3;
+
+  window.obNext = () => {
+    if (obSlide < OB_TOTAL - 1) {
+      document.getElementById(`ob-slide-${obSlide}`).classList.remove('active');
+      document.getElementById(`ob-dot-${obSlide}`).classList.remove('active');
+      obSlide++;
+      document.getElementById(`ob-slide-${obSlide}`).classList.add('active');
+      document.getElementById(`ob-dot-${obSlide}`).classList.add('active');
+      if (obSlide === OB_TOTAL - 1) document.getElementById('obNextBtn').textContent = '시작하기 🚀';
+    } else {
+      obFinish();
+    }
+  };
+  window.obFinish = () => {
+    localStorage.setItem(OB_KEY, '1');
+    document.getElementById('onboardingScreen').classList.remove('active');
+  };
+  function maybeShowOnboarding() {
+    if (!localStorage.getItem(OB_KEY)) {
+      document.getElementById('onboardingScreen').classList.add('active');
+    }
+  }
+
+  // ── 로그인 상태 감지 ──
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('authScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'block';
+      const initial = (user.displayName || user.email || '?')[0].toUpperCase();
+      document.getElementById('userAvatar').textContent = initial;
+      document.getElementById('profileAvatar').textContent = initial;
+      document.getElementById('profileName').textContent = user.displayName || '사용자';
+      document.getElementById('profileEmail').textContent = user.email;
+      maybeShowOnboarding();
+      loadFeed();
+      loadMyToday();
+    } else {
+      currentUser = null;
+      document.getElementById('authScreen').style.display = 'flex';
+      document.getElementById('appScreen').style.display = 'none';
+    }
+  });
+
+  // ── 인증 ──
+  window.showLogin = () => {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('authError').textContent = '';
+  };
+  window.showSignup = () => {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('signupForm').style.display = 'block';
+    document.getElementById('authError').textContent = '';
+  };
+  window.loginWithEmail = async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      document.getElementById('authError').textContent = '이메일 또는 비밀번호가 틀렸어요.';
+    }
+  };
+  window.signupWithEmail = async () => {
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+    if (!name) { document.getElementById('authError').textContent = '닉네임을 입력해주세요.'; return; }
+    try {
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(user, { displayName: name });
+    } catch (e) {
+      document.getElementById('authError').textContent = '회원가입 실패. 이메일을 확인해주세요.';
+    }
+  };
+  window.loginWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      document.getElementById('authError').textContent = '구글 로그인 실패. 다시 시도해주세요.';
+    }
+  };
+  window.logout = async () => { await signOut(auth); };
+
+  // ── 탭 전환 ──
+  window.showTab = (tab) => {
+    ['home', 'record', 'feed', 'profile'].forEach(t => {
+      document.getElementById(t + 'Tab').style.display = 'none';
+    });
+    document.getElementById(tab + 'Tab').style.display = 'block';
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    const tabs = ['home', 'record', 'feed', 'profile'];
+    document.querySelectorAll('.tab-item')[tabs.indexOf(tab)].classList.add('active');
+    if (tab === 'feed') loadAllFeed();
+    if (tab === 'home') loadMyToday();
+  };
+
+  // ── 이미지 압축 ──
+  window.handleFile = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.onload = () => {
+        const maxSize = 1024;
+        let width = img.width, height = img.height;
+        if (width > height && width > maxSize) { height = (height * maxSize) / width; width = maxSize; }
+        else if (height > maxSize) { width = (width * maxSize) / height; height = maxSize; }
+        canvas.width = width; canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.8);
+        currentImageBase64 = compressed.split(',')[1];
+        document.getElementById('previewImg').src = compressed;
+        document.getElementById('preview').style.display = 'block';
+        document.getElementById('analyzeBtn').style.display = 'block';
+        document.getElementById('resultCard').style.display = 'none';
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ── AI 분석 ──
+  window.analyze = async () => {
+    const apiKey = getOpenAIKey();
+    if (!apiKey) { showKeyModal(); return; }
+    const btn = document.getElementById('analyzeBtn');
+    const loading = document.getElementById('loading');
+    btn.style.display = 'none';
+    loading.style.display = 'block';
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: "gpt-4o", max_tokens: 1000,
+          messages: [{ role: "user", content: [
+            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${currentImageBase64}` } },
+            { type: "text", text: `당신은 영양사 AI입니다. 이 식사 사진을 분석해주세요.\n\n분석 규칙:\n1. 사진에 음식이 여러 개 있으면 모두 인식해서 foodName에 나열하세요 (예: "흰쌀밥, 김치찌개, 계란말이")\n2. 칼로리는 표준 영양 데이터 기준으로 일관되게 추정하세요. 같은 음식이면 항상 비슷한 범위를 유지하세요.\n3. 탄수화물/단백질/지방은 숫자만 반환하세요 (단위 g 제외, 숫자만)\n4. warningComment: 부족한 영양소가 있으면 경고 메시지, 없으면 빈 문자열\n\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.\n{\n  "foodName": "음식 이름 (여러 개면 쉼표로 나열)",\n  "calorieRange": "약 OOO~OOOkcal",\n  "carbs": 숫자만,\n  "protein": 숫자만,\n  "fat": 숫자만,\n  "balanceComment": "영양 밸런스에 대한 친절한 한국어 코멘트 2~3문장",\n  "warningComment": "부족한 영양소 경고 또는 빈 문자열"\n}` }
+          ]}]
+        })
+      });
+      const data = await response.json();
+      const clean = data.choices[0].message.content.trim().replace(/```json|```/g, '');
+      currentResult = JSON.parse(clean);
+      document.getElementById('foodName').textContent = currentResult.foodName;
+      document.getElementById('calorieBadge').textContent = currentResult.calorieRange;
+      document.getElementById('carbs').textContent = currentResult.carbs + 'g';
+      document.getElementById('protein').textContent = currentResult.protein + 'g';
+      document.getElementById('fat').textContent = currentResult.fat + 'g';
+      document.getElementById('balanceComment').textContent = currentResult.balanceComment;
+      const warningEl = document.getElementById('warningComment');
+      if (currentResult.warningComment) {
+        warningEl.textContent = currentResult.warningComment;
+        warningEl.style.display = 'block';
+      } else {
+        warningEl.style.display = 'none';
+      }
+      document.getElementById('resultCard').style.display = 'block';
+    } catch (e) {
+      // ✅ alert → 토스트
+      showToast('분석 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.', 'error');
+      btn.style.display = 'block';
+    } finally {
+      loading.style.display = 'none';
+    }
+  };
+
+  // ── 피드 공유 ──
+  window.shareToFeed = async () => {
+    if (!currentResult || !currentUser) return;
+    try {
+      await addDoc(collection(db, 'posts'), {
+        userId: currentUser.uid,
+        userName: currentUser.displayName || currentUser.email,
+        imageBase64: currentImageBase64,
+        foodName: currentResult.foodName,
+        calorieRange: currentResult.calorieRange,
+        carbs: parseInt(currentResult.carbs) || 0,
+        protein: parseInt(currentResult.protein) || 0,
+        fat: parseInt(currentResult.fat) || 0,
+        balanceComment: currentResult.balanceComment,
+        likes: [], comments: [],
+        createdAt: serverTimestamp()
+      });
+      // ✅ alert → 토스트
+      showToast('피드에 공유됐어요! 🎉', 'success');
+      document.getElementById('resultCard').style.display = 'none';
+      document.getElementById('preview').style.display = 'none';
+      document.getElementById('analyzeBtn').style.display = 'none';
+      currentResult = null;
+      loadFeed();
+      loadMyToday();
+    } catch (e) {
+      showToast('공유 중 오류가 발생했어요. 다시 시도해주세요.', 'error');
+    }
+  };
+
+  // ── 피드 로딩 ──
+  async function loadFeed() {
+    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const posts = [];
+    snapshot.forEach(d => posts.push({ id: d.id, ...d.data() }));
+    renderFeed(posts, 'feedList');
+  }
+  async function loadAllFeed() {
+    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const posts = [];
+    snapshot.forEach(d => posts.push({ id: d.id, ...d.data() }));
+    renderFeed(posts, 'feedListAll');
+  }
+  function renderFeed(posts, containerId) {
+    const container = document.getElementById(containerId);
+    if (posts.length === 0) {
+      container.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:40px 0;">아직 게시물이 없어요.<br>첫 번째로 식사를 공유해보세요! 🍽️</p>';
+      return;
+    }
+    container.innerHTML = posts.map(post => {
+      const liked = post.likes?.includes(currentUser?.uid);
+      const likeCount = post.likes?.length || 0;
+      const commentCount = post.comments?.length || 0;
+      return `
+        <div class="feed-item">
+          <img src="data:image/jpeg;base64,${post.imageBase64}" alt="${post.foodName}" />
+          <div class="feed-body">
+            <div class="feed-user">👤 ${post.userName}</div>
+            <div class="feed-food">${post.foodName}</div>
+            <div class="feed-cal">${post.calorieRange}</div>
+            <div class="feed-comment">${post.balanceComment}</div>
+            <div class="feed-actions">
+              <button class="like-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
+                ${liked ? '❤️' : '🤍'} ${likeCount}
+              </button>
+              <button class="comment-btn" onclick="openComments('${post.id}', ${JSON.stringify(post.comments || []).replace(/"/g, '&quot;')})">
+                💬 ${commentCount}
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── 좋아요 ──
+  window.toggleLike = async (postId) => {
+    if (!currentUser) return;
+    const postRef = doc(db, 'posts', postId);
+    const snapshot = await getDocs(query(collection(db, 'posts')));
+    const postData = snapshot.docs.find(d => d.id === postId)?.data();
+    if (!postData) return;
+    const liked = postData.likes?.includes(currentUser.uid);
+    const newLikes = liked
+      ? postData.likes.filter(id => id !== currentUser.uid)
+      : [...(postData.likes || []), currentUser.uid];
+    await updateDoc(postRef, { likes: newLikes });
+    loadFeed();
+    loadAllFeed();
+  };
+
+  // ── 댓글 ──
+  window.openComments = (postId, comments) => {
+    currentPostId = postId;
+    renderComments(comments);
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('commentSheet').classList.add('open');
+  };
+  window.closeComments = () => {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('commentSheet').classList.remove('open');
+    currentPostId = null;
+  };
+  function renderComments(comments) {
+    document.getElementById('commentList').innerHTML = comments.length === 0
+      ? '<p style="color:#9ca3af;font-size:14px;text-align:center;padding:20px 0;">첫 댓글을 남겨보세요!</p>'
+      : comments.map(c => `
+        <div class="comment-item">
+          <div class="comment-avatar">${c.name[0]}</div>
+          <div class="comment-bubble">
+            <div class="comment-name">${c.name}</div>
+            <div class="comment-text">${c.text}</div>
+          </div>
+        </div>`).join('');
+  }
+  window.submitComment = async () => {
+    const text = document.getElementById('commentInput').value.trim();
+    if (!text || !currentUser || !currentPostId) return;
+    const comment = { name: currentUser.displayName || currentUser.email, text, userId: currentUser.uid };
+    const postRef = doc(db, 'posts', currentPostId);
+    try {
+      await updateDoc(postRef, { comments: arrayUnion(comment) });
+      document.getElementById('commentInput').value = '';
+      loadFeed();
+      loadAllFeed();
+      const snapshot = await getDocs(query(collection(db, 'posts')));
+      const postData = snapshot.docs.find(d => d.id === currentPostId)?.data();
+      if (postData) renderComments(postData.comments || []);
+    } catch (e) {
+      showToast('댓글 전송에 실패했어요. 다시 시도해주세요.', 'error');
+    }
+  };
+
+  // ── 오늘 영양 요약 ──
+  async function loadMyToday() {
+    if (!currentUser) return;
+    document.getElementById('greetingText').textContent = `${currentUser.displayName || '사용자'}님, 안녕하세요! 👋`;
+    const now = new Date();
+    document.getElementById('todayDate').textContent = `${now.getMonth()+1}월 ${now.getDate()}일`;
+    try {
+      const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+      const snapshot = await getDocs(q);
+      const today = new Date().toDateString();
+      let totalCal = 0, totalCarbs = 0, totalProtein = 0, totalFat = 0;
+      snapshot.forEach(d => {
+        const data = d.data();
+        if (data.userId === currentUser.uid) {
+          const postDate = data.createdAt?.toDate?.()?.toDateString?.();
+          if (postDate === today) {
+            const calMatch = data.calorieRange?.match(/(\d+)~(\d+)/);
+            if (calMatch) totalCal += Math.round((parseInt(calMatch[1]) + parseInt(calMatch[2])) / 2);
+            totalCarbs += parseInt(data.carbs) || 0;
+            totalProtein += parseInt(data.protein) || 0;
+            totalFat += parseInt(data.fat) || 0;
+          }
+        }
+      });
+      document.getElementById('totalCalories').textContent = totalCal;
+      document.getElementById('totalCarbs').textContent = totalCarbs + 'g';
+      document.getElementById('totalProtein').textContent = totalProtein + 'g';
+      document.getElementById('totalFat').textContent = totalFat + 'g';
+    } catch (e) {
+      console.error('loadMyToday 에러:', e);
+    }
+  }
+
+  // ── 음식 이름 수정 & AI 재분석 ──
+  window.toggleEdit = async () => {
+    const foodName = document.getElementById('foodName');
+    const editBtn = document.getElementById('editBtn');
+    if (foodName.contentEditable === 'false') {
+      foodName.contentEditable = 'true';
+      foodName.focus();
+      editBtn.textContent = '✅ 완료';
+      editBtn.style.borderColor = '#22c55e';
+      editBtn.style.color = '#22c55e';
+    } else {
+      foodName.contentEditable = 'false';
+      editBtn.textContent = '⏳ 재분석 중...';
+      editBtn.disabled = true;
+      const updatedFoodName = foodName.textContent.trim();
+      currentResult.foodName = updatedFoodName;
+      try {
+        const apiKey = getOpenAIKey();
+        if (!apiKey) { showKeyModal(); return; }
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: "gpt-4o", max_tokens: 1000,
+            messages: [{ role: "user", content: [
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${currentImageBase64}` } },
+              { type: "text", text: `당신은 영양사 AI입니다. 유저가 음식 이름을 "${updatedFoodName}"으로 수정했습니다.\n\n기존 분석 결과:\n- 음식: ${currentResult.foodName}\n- 칼로리: ${currentResult.calorieRange}\n- 탄수화물: ${currentResult.carbs}g\n- 단백질: ${currentResult.protein}g\n- 지방: ${currentResult.fat}g\n\n수정된 음식 이름을 기준으로 정확하게 재계산해주세요.\n규칙:\n1. 기존 음식과 동일한 음식이면 기존 수치를 기준으로 비례 계산하세요\n2. 새로운 음식이 추가됐으면 해당 음식 영양소를 더해주세요\n3. 음식이 제거됐으면 해당 음식 영양소를 빼주세요\n4. 숫자는 정수로만 반환하세요\n\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.\n{\n  "foodName": "${updatedFoodName}",\n  "calorieRange": "약 OOO~OOOkcal",\n  "carbs": 0,\n  "protein": 0,\n  "fat": 0,\n  "balanceComment": "코멘트",\n  "warningComment": "경고 또는 빈 문자열"\n}` }
+            ]}]
+          })
+        });
+        const data = await response.json();
+        const clean = data.choices[0].message.content.trim().replace(/```json|```/g, '');
+        const reResult = JSON.parse(clean);
+        currentResult = reResult;
+        document.getElementById('foodName').textContent = reResult.foodName;
+        document.getElementById('calorieBadge').textContent = reResult.calorieRange;
+        document.getElementById('carbs').textContent = reResult.carbs + 'g';
+        document.getElementById('protein').textContent = reResult.protein + 'g';
+        document.getElementById('fat').textContent = reResult.fat + 'g';
+        document.getElementById('balanceComment').textContent = reResult.balanceComment;
+        const warningEl = document.getElementById('warningComment');
+        if (reResult.warningComment) {
+          warningEl.textContent = reResult.warningComment;
+          warningEl.style.display = 'block';
+        } else {
+          warningEl.style.display = 'none';
+        }
+      } catch (e) {
+        // ✅ alert → 토스트
+        showToast('재분석 중 오류가 발생했어요. 다시 시도해주세요.', 'error');
+      } finally {
+        editBtn.textContent = '✏️ 수정';
+        editBtn.style.borderColor = '#6366f1';
+        editBtn.style.color = '#6366f1';
+        editBtn.disabled = false;
+      }
+    }
+  };
+
+  showTab('home');
+</script>
+</body>
+</html>
