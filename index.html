@@ -414,6 +414,11 @@
       <div class="ob-desc">음식 사진을 업로드하면<br><strong>GPT-4o AI</strong>가 음식을 인식하고<br>탄수화물·단백질·지방까지<br>자동으로 계산해드려요.</div>
     </div>
     <div class="ob-slide" id="ob-slide-2">
+      <div class="ob-emoji">🤖</div>
+      <div class="ob-title">하루 5번<br>무료로 분석해드려요</div>
+      <div class="ob-desc">매일 <strong>5번까지는 무료</strong>로<br>AI 음식 분석을 사용할 수 있어요.<br>자정이 지나면 횟수가 초기화돼요.</div>
+    </div>
+    <div class="ob-slide" id="ob-slide-3">
       <div class="ob-emoji">🌍</div>
       <div class="ob-title">친구들과<br>함께 기록해요</div>
       <div class="ob-desc">내 식사를 피드에 공유하고<br><strong>좋아요와 댓글</strong>로 소통하며<br>서로의 건강한 식단을<br>응원해보세요.</div>
@@ -423,6 +428,7 @@
     <div class="ob-dot active" id="ob-dot-0"></div>
     <div class="ob-dot" id="ob-dot-1"></div>
     <div class="ob-dot" id="ob-dot-2"></div>
+    <div class="ob-dot" id="ob-dot-3"></div>
   </div>
   <div class="ob-footer">
     <button class="ob-next-btn" id="obNextBtn" onclick="obNext()">다음</button>
@@ -496,7 +502,8 @@
         <img id="previewImg" src="" alt="미리보기" />
         <button class="change-btn" onclick="document.getElementById('fileInput').click()">변경</button>
       </div>
-      <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" style="display:none;">🤖 AI 분석하기</button>
+      <div id="analyzeCounter" style="display:none; text-align:center; font-size:13px; margin-top:8px;"></div>
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" style="display:none;">🤖 AI 분석하기</button>
       <div class="loading" id="loading" style="display:none; text-align:center; padding:20px;">
         <div class="spinner"></div>
         <p>AI가 식사를 분석하고 있어요...</p>
@@ -546,7 +553,7 @@
       <div class="profile-name" id="profileName"></div>
       <div class="profile-email" id="profileEmail"></div>
       <button class="logout-btn" onclick="logout()">로그아웃</button>
-      <button onclick="showKeyModal()" style="margin-top:10px; padding:10px 24px; background:#fff; color:#6366f1; border:1px solid #6366f1; border-radius:20px; font-size:14px; font-weight:600; cursor:pointer;">🔑 API 키 변경</button>
+      <button onclick="showKeyModal()" style="margin-top:10px; padding:10px 24px; background:#fff; color:#6366f1; border:1px solid #6366f1; border-radius:20px; font-size:14px; font-weight:600; cursor:pointer;">🤖 AI 분석 설정</button>
     </div>
   </div>
 
@@ -593,9 +600,42 @@
   const API_URL = "https://api.openai.com/v1/chat/completions";
   const OB_KEY = "foodsnap_ob_done";
   const KEY_STORAGE = "foodsnap_openai_key";
+  const DAILY_LIMIT = 5;
+  const COUNT_KEY = "foodsnap_daily_count";
+  const DATE_KEY = "foodsnap_daily_date";
 
   function getOpenAIKey() {
     return localStorage.getItem(KEY_STORAGE) || '';
+  }
+
+  // 오늘 날짜 기준 무료 사용 횟수 관리
+  function getTodayCount() {
+    const saved = localStorage.getItem(DATE_KEY);
+    const today = new Date().toDateString();
+    if (saved !== today) {
+      localStorage.setItem(DATE_KEY, today);
+      localStorage.setItem(COUNT_KEY, '0');
+      return 0;
+    }
+    return parseInt(localStorage.getItem(COUNT_KEY) || '0');
+  }
+  function incrementCount() {
+    const count = getTodayCount() + 1;
+    localStorage.setItem(COUNT_KEY, String(count));
+    return count;
+  }
+  function canAnalyze() {
+    if (getOpenAIKey()) return true; // 키 있으면 무제한
+    return getTodayCount() < DAILY_LIMIT;
+  }
+  function updateAnalyzeCounter() {
+    const el = document.getElementById('analyzeCounter');
+    if (!el) return;
+    if (getOpenAIKey()) { el.style.display = 'none'; return; }
+    const remaining = DAILY_LIMIT - getTodayCount();
+    el.style.display = 'block';
+    el.textContent = `오늘 무료 분석 ${remaining}회 남았어요`;
+    el.style.color = remaining <= 1 ? '#ef4444' : '#6b7280';
   }
 
   function showKeyModal() {
@@ -610,6 +650,7 @@
     localStorage.setItem(KEY_STORAGE, key);
     document.getElementById('keyModal').style.display = 'none';
     document.getElementById('keyError').textContent = '';
+    updateAnalyzeCounter();
   };
   window.removeApiKey = () => {
     localStorage.removeItem(KEY_STORAGE);
@@ -639,7 +680,7 @@
 
   // ── 온보딩 ──
   let obSlide = 0;
-  const OB_TOTAL = 3;
+  const OB_TOTAL = 4;
 
   window.obNext = () => {
     if (obSlide < OB_TOTAL - 1) {
@@ -675,6 +716,7 @@
       document.getElementById('profileName').textContent = user.displayName || '사용자';
       document.getElementById('profileEmail').textContent = user.email;
       maybeShowOnboarding();
+      updateAnalyzeCounter();
       loadFeed();
       loadMyToday();
     } else {
@@ -759,6 +801,7 @@
         document.getElementById('previewImg').src = compressed;
         document.getElementById('preview').style.display = 'block';
         document.getElementById('analyzeBtn').style.display = 'block';
+        updateAnalyzeCounter();
         document.getElementById('resultCard').style.display = 'none';
       };
       img.src = e.target.result;
@@ -768,8 +811,11 @@
 
   // ── AI 분석 ──
   window.analyze = async () => {
+    if (!canAnalyze()) {
+      showToast('오늘 체험 횟수 5회를 모두 사용했어요. 내일 다시 만나요! 😊', 'info', 4000);
+      return;
+    }
     const apiKey = getOpenAIKey();
-    if (!apiKey) { showKeyModal(); return; }
     const btn = document.getElementById('analyzeBtn');
     const loading = document.getElementById('loading');
     btn.style.display = 'none';
@@ -802,6 +848,8 @@
       } else {
         warningEl.style.display = 'none';
       }
+      if (!getOpenAIKey()) incrementCount();
+      updateAnalyzeCounter();
       document.getElementById('resultCard').style.display = 'block';
     } catch (e) {
       // ✅ alert → 토스트
