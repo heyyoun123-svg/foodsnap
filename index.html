@@ -638,7 +638,7 @@
     el.style.color = remaining <= 1 ? '#ef4444' : '#6b7280';
   }
 
-  function showKeyModal() {
+  window.showKeyModal = function() {
     document.getElementById('keyModal').style.display = 'flex';
   }
   window.saveApiKey = () => {
