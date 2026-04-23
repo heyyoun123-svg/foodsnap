@@ -2,6 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HSTET9PEYV"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-HSTET9PEYV');
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FoodSnap</title>
   <style>
@@ -437,8 +445,9 @@
 </div>
 
 <!-- ── OpenAI API 키 입력 모달 ── -->
-<div id="keyModal" style="display:none; position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; height:100vh; background:rgba(0,0,0,0.6); z-index:300; align-items:center; justify-content:center;">
-  <div style="background:#fff; border-radius:20px; padding:28px 24px; margin:0 20px; width:calc(100% - 40px);">
+<div id="keyModal" style="display:none; position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; height:100vh; background:rgba(0,0,0,0.6); z-index:300; align-items:center; justify-content:center;" onclick="if(event.target===this)closeKeyModal()">
+  <div style="background:#fff; border-radius:20px; padding:28px 24px; margin:0 20px; width:calc(100% - 40px); position:relative;">
+    <button onclick="closeKeyModal()" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:22px; color:#9ca3af; cursor:pointer; line-height:1;">✕</button>
     <div style="font-size:28px; text-align:center; margin-bottom:12px;">🔑</div>
     <div style="font-size:18px; font-weight:700; color:#1a1a1a; margin-bottom:8px; text-align:center;">OpenAI API 키 입력</div>
     <div style="font-size:13px; color:#6b7280; margin-bottom:20px; text-align:center; line-height:1.6;">AI 분석 기능을 사용하려면<br>OpenAI API 키가 필요해요.<br>키는 이 기기에만 저장돼요.</div>
@@ -600,12 +609,13 @@
   const API_URL = "https://api.openai.com/v1/chat/completions";
   const OB_KEY = "foodsnap_ob_done";
   const KEY_STORAGE = "foodsnap_openai_key";
+  const DEMO_KEY = "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";
   const DAILY_LIMIT = 5;
   const COUNT_KEY = "foodsnap_daily_count";
   const DATE_KEY = "foodsnap_daily_date";
 
   function getOpenAIKey() {
-    return localStorage.getItem(KEY_STORAGE) || '';
+    return localStorage.getItem(KEY_STORAGE) || DEMO_KEY;
   }
 
   // 오늘 날짜 기준 무료 사용 횟수 관리
@@ -624,14 +634,17 @@
     localStorage.setItem(COUNT_KEY, String(count));
     return count;
   }
+  function hasCustomKey() {
+    return !!localStorage.getItem(KEY_STORAGE);
+  }
   function canAnalyze() {
-    if (getOpenAIKey()) return true; // 키 있으면 무제한
-    return getTodayCount() < DAILY_LIMIT;
+    if (hasCustomKey()) return true; // 본인 키 등록시 무제한
+    return getTodayCount() < DAILY_LIMIT; // 데모키는 하루 5회 제한
   }
   function updateAnalyzeCounter() {
     const el = document.getElementById('analyzeCounter');
     if (!el) return;
-    if (getOpenAIKey()) { el.style.display = 'none'; return; }
+    if (hasCustomKey()) { el.style.display = 'none'; return; }
     const remaining = DAILY_LIMIT - getTodayCount();
     el.style.display = 'block';
     el.textContent = `오늘 무료 분석 ${remaining}회 남았어요`;
@@ -641,6 +654,10 @@
   window.showKeyModal = function() {
     document.getElementById('keyModal').style.display = 'flex';
   }
+  window.closeKeyModal = function() {
+    document.getElementById('keyModal').style.display = 'none';
+    document.getElementById('keyError').textContent = '';
+  };
   window.saveApiKey = () => {
     const key = document.getElementById('keyInput').value.trim();
     if (!key.startsWith('sk-')) {
@@ -828,7 +845,7 @@
           model: "gpt-4o", max_tokens: 1000,
           messages: [{ role: "user", content: [
             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${currentImageBase64}` } },
-            { type: "text", text: `당신은 영양사 AI입니다. 이 식사 사진을 분석해주세요.\n\n분석 규칙:\n1. 사진에 음식이 여러 개 있으면 모두 인식해서 foodName에 나열하세요 (예: "흰쌀밥, 김치찌개, 계란말이")\n2. 칼로리는 표준 영양 데이터 기준으로 일관되게 추정하세요. 같은 음식이면 항상 비슷한 범위를 유지하세요.\n3. 탄수화물/단백질/지방은 숫자만 반환하세요 (단위 g 제외, 숫자만)\n4. warningComment: 부족한 영양소가 있으면 경고 메시지, 없으면 빈 문자열\n\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.\n{\n  "foodName": "음식 이름 (여러 개면 쉼표로 나열)",\n  "calorieRange": "약 OOO~OOOkcal",\n  "carbs": 숫자만,\n  "protein": 숫자만,\n  "fat": 숫자만,\n  "balanceComment": "영양 밸런스에 대한 친절한 한국어 코멘트 2~3문장",\n  "warningComment": "부족한 영양소 경고 또는 빈 문자열"\n}` }
+            { type: "text", text: `당신은 영양사 AI입니다. 이 식사 사진을 분석해주세요.\n\n분석 규칙:\n1. 사진에 음식이 여러 개 있으면 모두 인식해서 foodName에 나열하세요 (예: "흰쌀밥, 김치찌개, 계란말이")\n2. 칼로리는 표준 영양 데이터 기준으로 일관되게 추정하세요. 같은 음식이면 항상 비슷한 범위를 유지하세요.\n3. 탄수화물/단백질/지방은 숫자만 반환하세요 (단위 g 제외, 숫자만)\n4. warningComment: 부족한 영양소가 있으면 경고 메시지, 없으면 빈 문자열\n\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.\n{\n  "foodName": "음식 이름 (여러 개면 쉼표로 나열)",\n  "calorieRange": "약 OOO~OOOkcal",\n  "carbs": 숫자만,\n  "protein": 숫자만,\n  "fat": 숫자만,\n  "balanceComment": "각 음식의 영양 특징을 구체적으로 언급하고, 이 식사의 장점과 보완할 점을 친절하게 2~3문장으로 작성해주세요",\n  "warningComment": "부족한 영양소 경고 또는 빈 문자열"\n}` }
           ]}]
         })
       });
@@ -848,7 +865,7 @@
       } else {
         warningEl.style.display = 'none';
       }
-      if (!getOpenAIKey()) incrementCount();
+      if (!hasCustomKey()) incrementCount();
       updateAnalyzeCounter();
       document.getElementById('resultCard').style.display = 'block';
     } catch (e) {
