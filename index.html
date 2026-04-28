@@ -845,7 +845,33 @@
           model: "gpt-4o", max_tokens: 1000,
           messages: [{ role: "user", content: [
             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${currentImageBase64}` } },
-            { type: "text", text: `당신은 영양사 AI입니다. 이 식사 사진을 분석해주세요.\n\n분석 규칙:\n1. 사진에 음식이 여러 개 있으면 모두 인식해서 foodName에 나열하세요 (예: "흰쌀밥, 김치찌개, 계란말이")\n2. 칼로리는 표준 영양 데이터 기준으로 일관되게 추정하세요. 같은 음식이면 항상 비슷한 범위를 유지하세요.\n3. 탄수화물/단백질/지방은 숫자만 반환하세요 (단위 g 제외, 숫자만)\n4. warningComment: 부족한 영양소가 있으면 경고 메시지, 없으면 빈 문자열\n\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.\n{\n  "foodName": "음식 이름 (여러 개면 쉼표로 나열)",\n  "calorieRange": "약 OOO~OOOkcal",\n  "carbs": 숫자만,\n  "protein": 숫자만,\n  "fat": 숫자만,\n  "balanceComment": "아래 규칙을 반드시 지켜서 작성하세요: 1) 사진에서 인식한 각 음식을 하나씩 언급하며 해당 음식의 주요 영양소(탄수화물/단백질/지방/식이섬유 중 대표적인 것)를 구체적으로 설명하세요. 2) 이 식사 전체의 영양 균형에서 좋은 점과 부족한 점을 각각 한 가지씩 명시하세요. 3) 절대 다양한 영양소가 골고루 같은 추상적이고 뭉뚱그린 표현은 사용하지 마세요. 2~3문장으로 작성하세요.",\n  "warningComment": "부족한 영양소 경고 또는 빈 문자열"\n}` }
+            { type: "text", text: `당신은 전문 영양사 AI입니다. 이 식사 사진을 정밀하게 분석해주세요.
+
+분석 규칙:
+1. 사진에 음식이 여러 개 있으면 모두 인식해서 foodName에 나열하세요 (예: "흰쌀밥, 김치찌개, 계란말이")
+2. 칼로리는 표준 영양 데이터 기준으로 각 음식별로 계산 후 합산하세요.
+3. 탄수화물/단백질/지방은 숫자만 반환하세요 (단위 g 제외)
+4. balanceComment 작성 규칙:
+   - 반드시 인식한 각 음식을 하나씩 언급하며 그 음식의 핵심 영양소를 설명하세요
+   - 예시: "흰쌀밥은 탄수화물의 주 공급원이며, 김치찌개는 단백질과 나트륨을 제공합니다."
+   - 이 식사의 장점 1가지, 보완할 점 1가지를 명확히 서술하세요
+   - "다양한 영양소", "균형 잡힌", "골고루" 같은 추상적 표현은 절대 사용 금지
+   - 최소 3문장 이상 작성하세요
+5. warningComment 작성 규칙:
+   - 실제로 부족한 영양소가 있으면 구체적으로 어떤 음식을 추가하면 좋은지 제안하세요
+   - 예시: "칼슘이 부족합니다. 우유나 두부를 추가하면 좋아요."
+   - 부족한 영양소가 없으면 빈 문자열 반환
+
+반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.
+{
+  "foodName": "음식 이름 (여러 개면 쉼표로 나열)",
+  "calorieRange": "약 OOO~OOOkcal",
+  "carbs": 숫자만,
+  "protein": 숫자만,
+  "fat": 숫자만,
+  "balanceComment": "각 음식별 영양소 설명 + 장점 + 보완점 (최소 3문장)",
+  "warningComment": "부족한 영양소 + 구체적 보완 식품 제안 또는 빈 문자열"
+}` }
           ]}]
         })
       });
@@ -1070,7 +1096,32 @@
             model: "gpt-4o", max_tokens: 1000,
             messages: [{ role: "user", content: [
               { type: "image_url", image_url: { url: `data:image/jpeg;base64,${currentImageBase64}` } },
-              { type: "text", text: `당신은 영양사 AI입니다. 유저가 음식 이름을 "${updatedFoodName}"으로 수정했습니다.\n\n기존 분석 결과:\n- 음식: ${currentResult.foodName}\n- 칼로리: ${currentResult.calorieRange}\n- 탄수화물: ${currentResult.carbs}g\n- 단백질: ${currentResult.protein}g\n- 지방: ${currentResult.fat}g\n\n수정된 음식 이름을 기준으로 정확하게 재계산해주세요.\n규칙:\n1. 기존 음식과 동일한 음식이면 기존 수치를 기준으로 비례 계산하세요\n2. 새로운 음식이 추가됐으면 해당 음식 영양소를 더해주세요\n3. 음식이 제거됐으면 해당 음식 영양소를 빼주세요\n4. 숫자는 정수로만 반환하세요\n\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 절대 포함하지 마세요.\n{\n  "foodName": "${updatedFoodName}",\n  "calorieRange": "약 OOO~OOOkcal",\n  "carbs": 0,\n  "protein": 0,\n  "fat": 0,\n  "balanceComment": "코멘트",\n  "warningComment": "경고 또는 빈 문자열"\n}` }
+              { type: "text", text: `당신은 전문 영양사 AI입니다. 유저가 음식 이름을 "${updatedFoodName}"으로 수정했습니다.
+
+기존 분석 결과:
+- 음식: ${currentResult.foodName}
+- 칼로리: ${currentResult.calorieRange}
+- 탄수화물: ${currentResult.carbs}g / 단백질: ${currentResult.protein}g / 지방: ${currentResult.fat}g
+
+수정된 음식 목록("${updatedFoodName}")을 기준으로 처음부터 다시 분석하세요.
+규칙:
+1. 수정된 음식 목록의 각 음식을 표준 영양 데이터로 개별 계산 후 합산하세요
+2. 기존 수치에 의존하지 말고 새 음식 목록 기준으로 완전히 새로 계산하세요
+3. 칼로리, 탄수화물, 단백질, 지방 모두 수정된 음식 목록에 맞게 정확히 재산출하세요
+4. balanceComment: 수정된 각 음식을 하나씩 언급하며 핵심 영양소 설명 + 장점 + 보완점 (최소 3문장, 추상적 표현 금지)
+5. warningComment: 부족한 영양소와 구체적 보완 식품 제안 또는 빈 문자열
+6. 숫자는 정수로만 반환하세요
+
+반드시 아래 JSON 형식으로만 응답하세요.
+{
+  "foodName": "${updatedFoodName}",
+  "calorieRange": "약 OOO~OOOkcal",
+  "carbs": 숫자만,
+  "protein": 숫자만,
+  "fat": 숫자만,
+  "balanceComment": "각 음식별 영양소 설명 + 장점 + 보완점 (최소 3문장)",
+  "warningComment": "부족한 영양소 + 구체적 보완 식품 제안 또는 빈 문자열"
+}` }
             ]}]
           })
         });
