@@ -606,16 +606,16 @@
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
 
-  const API_URL = "https://api.openai.com/v1/chat/completions";
+  const API_URL = "https://foodsnap-proxy.heyyoun123.workers.dev";
   const OB_KEY = "foodsnap_ob_done";
   const KEY_STORAGE = "foodsnap_openai_key";
-  const DEMO_KEY = "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";
+  const DEMO_KEY = "demo";
   const DAILY_LIMIT = 5;
   const COUNT_KEY = "foodsnap_daily_count";
   const DATE_KEY = "foodsnap_daily_date";
 
   function getOpenAIKey() {
-    return localStorage.getItem(KEY_STORAGE) || DEMO_KEY;
+    return localStorage.getItem(KEY_STORAGE) || "";
   }
 
   // 오늘 날짜 기준 무료 사용 횟수 관리
