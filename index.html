@@ -368,6 +368,93 @@
     .summary-item { text-align: center; }
     .summary-value { font-size: 18px; font-weight: 700; }
     .summary-label { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+    /* 프로필 강화 스타일 */
+    .profile-stats-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 10px; margin-bottom: 12px;
+    }
+    .profile-stat-card {
+      background: #fff; border-radius: 16px;
+      padding: 16px; text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .profile-stat-icon { font-size: 24px; margin-bottom: 6px; }
+    .profile-stat-value { font-size: 20px; font-weight: 800; color: #6366f1; margin-bottom: 2px; }
+    .profile-stat-label { font-size: 11px; color: #9ca3af; }
+    .profile-section-title {
+      font-size: 15px; font-weight: 700; color: #1a1a1a;
+      margin: 16px 0 10px; padding: 0 4px;
+    }
+    .streak-card {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 16px; padding: 20px;
+      color: #fff; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+    .streak-fire { font-size: 40px; }
+    .streak-info { flex: 1; }
+    .streak-count { font-size: 28px; font-weight: 800; }
+    .streak-text { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+    .calorie-goal-card {
+      background: #fff; border-radius: 16px;
+      padding: 18px; margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .calorie-goal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .calorie-goal-title { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+    .calorie-goal-edit {
+      font-size: 12px; color: #6366f1; background: none;
+      border: 1px solid #6366f1; border-radius: 8px;
+      padding: 4px 10px; cursor: pointer;
+    }
+    .calorie-progress-bar {
+      width: 100%; height: 10px; background: #f3f4f6;
+      border-radius: 5px; overflow: hidden; margin-bottom: 8px;
+    }
+    .calorie-progress-fill {
+      height: 100%; background: #6366f1;
+      border-radius: 5px; transition: width 0.5s ease;
+    }
+    .calorie-progress-fill.over { background: #ef4444; }
+    .calorie-goal-numbers {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: #9ca3af;
+    }
+    .calorie-goal-numbers span { font-weight: 700; color: #1a1a1a; }
+    .my-feed-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 4px; margin-bottom: 12px;
+    }
+    .my-feed-thumb {
+      aspect-ratio: 1; border-radius: 8px;
+      overflow: hidden; background: #f3f4f6;
+    }
+    .my-feed-thumb img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .my-feed-empty {
+      grid-column: 1/-1; text-align: center;
+      color: #9ca3af; font-size: 13px; padding: 24px 0;
+    }
+    .goal-input-row {
+      display: flex; gap: 8px; margin-top: 10px;
+    }
+    .goal-input-row input {
+      flex: 1; padding: 10px 14px;
+      border: 1px solid #e5e7eb; border-radius: 12px;
+      font-size: 14px; outline: none;
+    }
+    .goal-input-row input:focus { border-color: #6366f1; }
+    .goal-save-btn {
+      padding: 10px 16px; background: #6366f1; color: #fff;
+      border: none; border-radius: 12px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
     .fab {
       position: fixed; bottom: 80px;
       right: calc(50% - 215px + 16px);
@@ -557,12 +644,74 @@
   </div>
 
   <div class="profile-screen" id="profileTab">
+    <!-- 프로필 카드 -->
     <div class="profile-card">
       <div class="profile-avatar" id="profileAvatar"></div>
       <div class="profile-name" id="profileName"></div>
       <div class="profile-email" id="profileEmail"></div>
       <button class="logout-btn" onclick="logout()">로그아웃</button>
       <button onclick="showKeyModal()" style="margin-top:10px; padding:10px 24px; background:#fff; color:#6366f1; border:1px solid #6366f1; border-radius:20px; font-size:14px; font-weight:600; cursor:pointer;">🤖 AI 분석 설정</button>
+    </div>
+
+    <!-- 연속 기록 스트릭 -->
+    <div class="streak-card">
+      <div class="streak-fire">🔥</div>
+      <div class="streak-info">
+        <div class="streak-count"><span id="streakCount">0</span>일째</div>
+        <div class="streak-text">연속으로 식단을 기록하고 있어요!</div>
+      </div>
+    </div>
+
+    <!-- 목표 칼로리 -->
+    <div class="calorie-goal-card">
+      <div class="calorie-goal-header">
+        <div class="calorie-goal-title">🎯 오늘의 칼로리 목표</div>
+        <button class="calorie-goal-edit" onclick="toggleGoalEdit()">수정</button>
+      </div>
+      <div class="calorie-progress-bar">
+        <div class="calorie-progress-fill" id="calorieProgressFill" style="width:0%"></div>
+      </div>
+      <div class="calorie-goal-numbers">
+        <div>섭취 <span id="profileTodayCal">0</span> kcal</div>
+        <div>목표 <span id="goalCalDisplay">2000</span> kcal</div>
+      </div>
+      <div id="goalEditRow" style="display:none;">
+        <div class="goal-input-row">
+          <input type="number" id="goalCalInput" placeholder="목표 칼로리 입력 (kcal)" />
+          <button class="goal-save-btn" onclick="saveGoal()">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이번 주 영양 통계 -->
+    <div class="profile-section-title">📊 이번 주 평균 영양소</div>
+    <div class="profile-stats-grid">
+      <div class="profile-stat-card">
+        <div class="profile-stat-icon">🔥</div>
+        <div class="profile-stat-value" id="weekAvgCal">-</div>
+        <div class="profile-stat-label">평균 칼로리 (kcal)</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="profile-stat-icon">🍚</div>
+        <div class="profile-stat-value" id="weekAvgCarbs">-</div>
+        <div class="profile-stat-label">평균 탄수화물 (g)</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="profile-stat-icon">🥩</div>
+        <div class="profile-stat-value" id="weekAvgProtein">-</div>
+        <div class="profile-stat-label">평균 단백질 (g)</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="profile-stat-icon">🥑</div>
+        <div class="profile-stat-value" id="weekAvgFat">-</div>
+        <div class="profile-stat-label">평균 지방 (g)</div>
+      </div>
+    </div>
+
+    <!-- 내 피드 모아보기 -->
+    <div class="profile-section-title">📷 내 식단 기록</div>
+    <div class="my-feed-grid" id="myFeedGrid">
+      <div class="my-feed-empty">아직 공유한 식단이 없어요 🍽️</div>
     </div>
   </div>
 
@@ -795,6 +944,7 @@
     document.querySelectorAll('.tab-item')[tabs.indexOf(tab)].classList.add('active');
     if (tab === 'feed') loadAllFeed();
     if (tab === 'home') loadMyToday();
+    if (tab === 'profile') loadProfileData();
   };
 
   // ── 이미지 압축 ──
@@ -845,7 +995,14 @@
           model: "gpt-4o", max_tokens: 1000,
           messages: [{ role: "user", content: [
             { type: "image_url", image_url: { url: `data:image/jpeg;base64,${currentImageBase64}` } },
-            { type: "text", text: `당신은 날카로운 분석을 해주는 전문 영양사 AI입니다. 이 식사 사진을 정밀하게 분석해주세요.
+            { type: "text", text: `당신은 다정하고 전문적인 영양 코치 AI입니다. 이 식사 사진을 정밀하게 분석해주세요.
+
+톤 & 스타일 규칙:
+- 마치 친한 영양사 코치가 옆에서 말해주듯 따뜻하고 격려하는 말투로 작성하세요
+- "~네요", "~어요", "~같아요" 같은 부드러운 어미를 사용하세요
+- 칭찬할 부분은 먼저 인정해주고, 보완할 점은 부드럽게 제안하세요
+- 이모지를 1~2개 자연스럽게 섞어 쓰세요 (💪 😊 🥗 등)
+- 딱딱하거나 의학적인 표현보다 일상적인 언어로 설명하세요
 
 분석 규칙:
 1. 사진에 음식이 여러 개 있으면 모두 인식해서 foodName에 나열하세요
@@ -969,7 +1126,7 @@
           <img src="data:image/jpeg;base64,${post.imageBase64}" alt="${post.foodName}" />
           <div class="feed-body">
             <div class="feed-user">👤 ${post.userName}</div>
-            <div class="feed-food">${post.foodName}</div>
+            <div class="feed-food">${post.userName}님의 식단</div>
             <div class="feed-cal">${post.calorieRange}</div>
             <div class="feed-comment">${post.balanceComment}</div>
             <div class="feed-actions">
@@ -1043,6 +1200,109 @@
     }
   };
 
+  // ── 목표 칼로리 ──
+  const GOAL_KEY = 'foodsnap_cal_goal';
+  function getCalGoal() { return parseInt(localStorage.getItem(GOAL_KEY) || '2000'); }
+
+  window.toggleGoalEdit = () => {
+    const row = document.getElementById('goalEditRow');
+    const input = document.getElementById('goalCalInput');
+    if (row.style.display === 'none') {
+      row.style.display = 'block';
+      input.value = getCalGoal();
+      input.focus();
+    } else {
+      row.style.display = 'none';
+    }
+  };
+  window.saveGoal = () => {
+    const val = parseInt(document.getElementById('goalCalInput').value);
+    if (!val || val < 500 || val > 9999) {
+      showToast('500~9999 사이로 입력해주세요.', 'error'); return;
+    }
+    localStorage.setItem(GOAL_KEY, String(val));
+    document.getElementById('goalEditRow').style.display = 'none';
+    showToast('목표 칼로리가 저장됐어요! 🎯', 'success');
+    loadProfileData();
+  };
+
+  // ── 프로필 데이터 로딩 ──
+  async function loadProfileData() {
+    if (!currentUser) return;
+    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const posts = [];
+    snapshot.forEach(d => posts.push({ id: d.id, ...d.data() }));
+    const myPosts = posts.filter(p => p.userId === currentUser.uid);
+
+    // 목표 칼로리 & 오늘 칼로리
+    const goal = getCalGoal();
+    document.getElementById('goalCalDisplay').textContent = goal;
+    const today = new Date().toDateString();
+    let todayCal = 0;
+    myPosts.forEach(p => {
+      const postDate = p.createdAt?.toDate?.()?.toDateString?.();
+      if (postDate === today) {
+        const m = p.calorieRange?.match(/(\d+)~(\d+)/);
+        if (m) todayCal += Math.round((parseInt(m[1]) + parseInt(m[2])) / 2);
+      }
+    });
+    document.getElementById('profileTodayCal').textContent = todayCal;
+    const pct = Math.min(Math.round((todayCal / goal) * 100), 100);
+    const fill = document.getElementById('calorieProgressFill');
+    fill.style.width = pct + '%';
+    fill.className = 'calorie-progress-fill' + (todayCal > goal ? ' over' : '');
+
+    // 스트릭 계산
+    const dateSet = new Set();
+    myPosts.forEach(p => {
+      const d = p.createdAt?.toDate?.()?.toDateString?.();
+      if (d) dateSet.add(d);
+    });
+    let streak = 0;
+    const cur = new Date();
+    while (true) {
+      if (dateSet.has(cur.toDateString())) {
+        streak++;
+        cur.setDate(cur.getDate() - 1);
+      } else break;
+    }
+    document.getElementById('streakCount').textContent = streak;
+
+    // 이번 주 평균 영양소
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 6);
+    const weekPosts = myPosts.filter(p => {
+      const d = p.createdAt?.toDate?.();
+      return d && d >= weekAgo;
+    });
+    if (weekPosts.length > 0) {
+      const days = new Set(weekPosts.map(p => p.createdAt?.toDate?.()?.toDateString?.())).size;
+      let wCal = 0, wCarbs = 0, wProtein = 0, wFat = 0;
+      weekPosts.forEach(p => {
+        const m = p.calorieRange?.match(/(\d+)~(\d+)/);
+        if (m) wCal += Math.round((parseInt(m[1]) + parseInt(m[2])) / 2);
+        wCarbs += parseInt(p.carbs) || 0;
+        wProtein += parseInt(p.protein) || 0;
+        wFat += parseInt(p.fat) || 0;
+      });
+      document.getElementById('weekAvgCal').textContent = Math.round(wCal / days);
+      document.getElementById('weekAvgCarbs').textContent = Math.round(wCarbs / days) + 'g';
+      document.getElementById('weekAvgProtein').textContent = Math.round(wProtein / days) + 'g';
+      document.getElementById('weekAvgFat').textContent = Math.round(wFat / days) + 'g';
+    }
+
+    // 내 피드 그리드
+    const grid = document.getElementById('myFeedGrid');
+    if (myPosts.length === 0) {
+      grid.innerHTML = '<div class="my-feed-empty">아직 공유한 식단이 없어요 🍽️</div>';
+    } else {
+      grid.innerHTML = myPosts.slice(0, 9).map(p => `
+        <div class="my-feed-thumb">
+          <img src="data:image/jpeg;base64,${p.imageBase64}" alt="식단" />
+        </div>`).join('');
+    }
+  }
+
   // ── 오늘 영양 요약 ──
   async function loadMyToday() {
     if (!currentUser) return;
@@ -1102,7 +1362,13 @@
             model: "gpt-4o", max_tokens: 1000,
             messages: [{ role: "user", content: [
               { type: "image_url", image_url: { url: `data:image/jpeg;base64,${currentImageBase64}` } },
-              { type: "text", text: `당신은 날카로운 분석을 해주는 전문 영양사 AI입니다. 유저가 음식 이름을 "${updatedFoodName}"으로 수정했습니다.
+              { type: "text", text: `당신은 다정하고 전문적인 영양 코치 AI입니다. 유저가 음식 이름을 "${updatedFoodName}"으로 수정했습니다.
+
+톤 & 스타일 규칙:
+- 마치 친한 영양사 코치가 옆에서 말해주듯 따뜻하고 격려하는 말투로 작성하세요
+- "~네요", "~어요", "~같아요" 같은 부드러운 어미를 사용하세요
+- 칭찬할 부분은 먼저 인정해주고, 보완할 점은 부드럽게 제안하세요
+- 이모지를 1~2개 자연스럽게 섞어 쓰세요 (💪 😊 🥗 등)
 
 수정된 음식 목록("${updatedFoodName}")을 기준으로 처음부터 완전히 새로 분석하세요.
 규칙:
