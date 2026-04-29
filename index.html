@@ -526,6 +526,36 @@
     .day-record-macros { font-size: 11px; color: #9ca3af; }
     .day-empty { text-align: center; color: #9ca3af; font-size: 13px; padding: 24px 0; }
 
+    /* AI 한 줄 코멘트 */
+    .ai-daily-comment {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      margin: 0 12px 12px; border-radius: 16px; padding: 16px 18px;
+      color: #fff; font-size: 14px; line-height: 1.6;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+      display: none;
+    }
+    .ai-daily-comment .comment-label {
+      font-size: 11px; opacity: 0.8; margin-bottom: 4px; font-weight: 600;
+    }
+    /* 마이페이지 메뉴 */
+    .profile-menu-card {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      margin-bottom: 12px; overflow: hidden;
+    }
+    .profile-menu-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px; font-size: 14px; color: #1a1a1a;
+      border-bottom: 1px solid #f3f4f6; cursor: pointer;
+    }
+    .profile-menu-item:last-child { border-bottom: none; }
+    .profile-menu-item:hover { background: #f9fafb; }
+    .profile-menu-item.danger { color: #ef4444; }
+    .profile-menu-left { display: flex; align-items: center; gap: 10px; }
+    .profile-menu-icon { font-size: 18px; }
+    .profile-menu-arrow { color: #d1d5db; font-size: 14px; }
+    .profile-version { text-align: center; font-size: 12px; color: #9ca3af; padding: 16px 0 4px; }
+
     .fab {
       position: fixed; bottom: 80px;
       right: calc(50% - 215px + 16px);
@@ -692,11 +722,16 @@
       <div id="warningComment" style="display:none; background:#fff7ed; border-left:3px solid #f97316; border-radius:8px; padding:12px; font-size:14px; color:#9a3412; line-height:1.5; margin-bottom:14px;"></div>
       <button class="share-btn" onclick="shareToFeed()">📤 피드에 공유하기</button>
     </div>
+    <!-- AI 한 줄 코멘트 -->
+    <div class="ai-daily-comment" id="aiDailyComment">
+      <div class="comment-label">🤖 오늘의 영양 코멘트</div>
+      <div id="aiDailyCommentText"></div>
+    </div>
+
     <div class="feed-section">
-      <h2>🌍 오늘의 피드</h2>
+      <h2>🌍 다른 사람들의 식단</h2>
       <div id="feedList"></div>
     </div>
-    <div id="myTodayFeed" style="display:none;"></div>
   </div>
 
   <div class="record-screen" id="recordTab">
@@ -731,7 +766,7 @@
 
   <div class="feed-only-screen" id="feedTab">
     <div class="feed-section" style="margin: 0 0 80px;">
-      <h2>🌍 전체 피드</h2>
+      <h2>📷 나의 식단 기록</h2>
       <div id="feedListAll"></div>
     </div>
   </div>
@@ -805,6 +840,64 @@
     <div class="profile-section-title">📷 내 식단 기록</div>
     <div class="my-feed-grid" id="myFeedGrid">
       <div class="my-feed-empty">아직 공유한 식단이 없어요 🍽️</div>
+    </div>
+
+    <!-- 설정 메뉴 -->
+    <div class="profile-section-title">⚙️ 설정</div>
+    <div class="profile-menu-card">
+      <div class="profile-menu-item" onclick="showToast('준비 중이에요 😊', 'info')">
+        <div class="profile-menu-left">
+          <span class="profile-menu-icon">💬</span>
+          <span>문의하기</span>
+        </div>
+        <span class="profile-menu-arrow">›</span>
+      </div>
+      <div class="profile-menu-item" onclick="showPrivacyPolicy()">
+        <div class="profile-menu-left">
+          <span class="profile-menu-icon">🔒</span>
+          <span>개인정보처리방침</span>
+        </div>
+        <span class="profile-menu-arrow">›</span>
+      </div>
+      <div class="profile-menu-item danger" onclick="confirmDelete()">
+        <div class="profile-menu-left">
+          <span class="profile-menu-icon">🗑️</span>
+          <span>탈퇴하기</span>
+        </div>
+        <span class="profile-menu-arrow">›</span>
+      </div>
+    </div>
+    <div class="profile-version">FoodSnap v1.0.0</div>
+  </div>
+
+  <!-- 개인정보처리방침 모달 -->
+  <div id="privacyModal" style="display:none; position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; height:100vh; background:rgba(0,0,0,0.6); z-index:300; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:20px; padding:24px; margin:0 20px; width:calc(100% - 40px); max-height:80vh; overflow-y:auto; position:relative;">
+      <button onclick="document.getElementById('privacyModal').style.display='none'" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:22px; color:#9ca3af; cursor:pointer;">✕</button>
+      <div style="font-size:17px; font-weight:800; color:#1a1a1a; margin-bottom:16px;">개인정보처리방침</div>
+      <div style="font-size:13px; color:#4b5563; line-height:1.8;">
+        <b>수집하는 개인정보</b><br>
+        FoodSnap은 서비스 제공을 위해 이메일, 닉네임, 식단 사진 및 분석 데이터를 수집합니다.<br><br>
+        <b>이용 목적</b><br>
+        수집된 정보는 AI 식단 분석, 피드 공유, 서비스 개선에만 사용됩니다.<br><br>
+        <b>보관 기간</b><br>
+        회원 탈퇴 시 모든 데이터는 즉시 삭제됩니다.<br><br>
+        <b>제3자 제공</b><br>
+        수집된 개인정보는 제3자에게 제공되지 않습니다.<br><br>
+        <b>문의</b><br>
+        heyyoun123@gmail.com
+      </div>
+    </div>
+  </div>
+
+  <!-- 탈퇴 확인 모달 -->
+  <div id="deleteModal" style="display:none; position:fixed; top:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; height:100vh; background:rgba(0,0,0,0.6); z-index:300; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:20px; padding:28px 24px; margin:0 20px; width:calc(100% - 40px); text-align:center;">
+      <div style="font-size:36px; margin-bottom:12px;">😢</div>
+      <div style="font-size:17px; font-weight:800; color:#1a1a1a; margin-bottom:8px;">정말 탈퇴하시겠어요?</div>
+      <div style="font-size:13px; color:#6b7280; margin-bottom:24px; line-height:1.6;">탈퇴하면 모든 식단 기록과<br>데이터가 영구 삭제돼요.</div>
+      <button onclick="deleteAccount()" style="width:100%; padding:14px; background:#ef4444; color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">탈퇴하기</button>
+      <button onclick="document.getElementById('deleteModal').style.display='none'" style="width:100%; padding:14px; background:#f3f4f6; color:#6b7280; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer;">취소</button>
     </div>
   </div>
 
@@ -1026,6 +1119,75 @@
   };
   window.logout = async () => { await signOut(auth); };
 
+  // ── AI 한 줄 코멘트 ──
+  async function generateAIDailyComment() {
+    if (!currentUser) return;
+    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const today = new Date().toDateString();
+    let totalCal = 0, totalCarbs = 0, totalProtein = 0, totalFat = 0, count = 0;
+
+    snapshot.forEach(d => {
+      const data = d.data();
+      if (data.userId === currentUser.uid) {
+        const postDate = data.createdAt?.toDate?.()?.toDateString?.();
+        if (postDate === today) {
+          const m = data.calorieRange?.match(/(\d+)~(\d+)/);
+          if (m) totalCal += Math.round((parseInt(m[1]) + parseInt(m[2])) / 2);
+          totalCarbs += parseInt(data.carbs) || 0;
+          totalProtein += parseInt(data.protein) || 0;
+          totalFat += parseInt(data.fat) || 0;
+          count++;
+        }
+      }
+    });
+
+    if (count === 0) return;
+
+    const commentEl = document.getElementById('aiDailyComment');
+    const textEl = document.getElementById('aiDailyCommentText');
+    if (!commentEl || !textEl) return;
+
+    // 간단한 룰 기반 코멘트
+    let comment = '';
+    if (totalProtein < 30) comment = `오늘 단백질이 ${totalProtein}g으로 조금 부족해요 💪 달걀이나 닭가슴살을 추가해보세요!`;
+    else if (totalCal > 2500) comment = `오늘 칼로리가 ${totalCal}kcal로 높은 편이에요 🔥 저녁은 가볍게 드시는 게 좋을 것 같아요!`;
+    else if (totalCarbs > 300) comment = `탄수화물이 ${totalCarbs}g으로 많은 편이에요 🍚 다음 식사엔 채소 위주로 드시는 건 어떨까요?`;
+    else if (totalFat > 80) comment = `지방이 ${totalFat}g으로 다소 높네요 🥑 오늘 남은 식사는 담백하게 드시는 걸 추천해요!`;
+    else comment = `오늘 ${totalCal}kcal 섭취하셨어요 😊 균형 잡힌 식사를 하고 계시네요, 잘 하고 있어요!`;
+
+    textEl.textContent = comment;
+    commentEl.style.display = 'block';
+  }
+
+  // ── 개인정보처리방침 & 탈퇴 ──
+  window.showPrivacyPolicy = () => {
+    document.getElementById('privacyModal').style.display = 'flex';
+  };
+  window.confirmDelete = () => {
+    document.getElementById('deleteModal').style.display = 'flex';
+  };
+  window.deleteAccount = async () => {
+    if (!currentUser) return;
+    try {
+      // 내 게시물 삭제
+      const q = query(collection(db, 'posts'));
+      const snapshot = await getDocs(q);
+      const delPromises = [];
+      snapshot.forEach(d => {
+        if (d.data().userId === currentUser.uid) {
+          delPromises.push(updateDoc(doc(db, 'posts', d.id), { userId: 'deleted', userName: '탈퇴한 사용자' }));
+        }
+      });
+      await Promise.all(delPromises);
+      await currentUser.delete();
+      document.getElementById('deleteModal').style.display = 'none';
+      showToast('탈퇴가 완료됐어요. 이용해주셔서 감사해요 😢', 'info', 4000);
+    } catch (e) {
+      showToast('탈퇴 중 오류가 발생했어요. 다시 시도해주세요.', 'error');
+    }
+  };
+
   // ── 탭 전환 ──
   window.showTab = (tab) => {
     ['home', 'record', 'feed', 'profile'].forEach(t => {
@@ -1195,14 +1357,21 @@
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
     const posts = [];
-    snapshot.forEach(d => posts.push({ id: d.id, ...d.data() }));
+    snapshot.forEach(d => {
+      const data = d.data();
+      if (data.userId !== currentUser?.uid) posts.push({ id: d.id, ...data });
+    });
     renderFeed(posts, 'feedList');
+    generateAIDailyComment();
   }
   async function loadAllFeed() {
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
     const posts = [];
-    snapshot.forEach(d => posts.push({ id: d.id, ...d.data() }));
+    snapshot.forEach(d => {
+      const data = d.data();
+      if (data.userId === currentUser?.uid) posts.push({ id: d.id, ...data });
+    });
     renderFeed(posts, 'feedListAll');
   }
   function renderFeed(posts, containerId) {
